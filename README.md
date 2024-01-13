@@ -1,4 +1,4 @@
-# 
+# Online electronics store
 
 ## Setup
 - Create Virtual environment by running `setup.py` script

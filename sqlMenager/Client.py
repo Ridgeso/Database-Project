@@ -52,7 +52,7 @@ class Client(metaclass=_ClientMeta):
         
         return self._executeQuerry(querry + ';')
     
-    def insert(self, table: str, names: Tuple[str], values: List[Tuple]) -> None:
+    def insert(self, table: str, names: Tuple[str], values: List[Tuple]) -> bool:
         formatRow = lambda row: '(' + ','.join(f"'{value}'" for value in row) + ')'
         rows = ", ".join(formatRow(row) for row in values)
         querry = f"INSERT INTO {table} ({', '.join(names)}) VALUES {rows};"
@@ -63,6 +63,8 @@ class Client(metaclass=_ClientMeta):
         noFetchError = _ClientMeta._erroraTraceback.pop()
         if noFetchError != ('Querry', 'None: no results to fetch | None'):
             _ClientMeta._erroraTraceback.append(noFetchError)
+            return False
+        return True
         
     def getTraceback(self) -> List:
         return _ClientMeta._erroraTraceback

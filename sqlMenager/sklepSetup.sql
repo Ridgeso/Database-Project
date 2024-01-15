@@ -64,6 +64,11 @@ CREATE TABLE client(
     password VARCHAR(64)
 );
 
+CREATE TABLE wozek(
+    id_client INT,
+    id_produktu INT
+);
+
 ALTER TABLE podkategoria
     ADD FOREIGN KEY (id_kategorii) REFERENCES kategorie (id_kategorii);
 
@@ -77,6 +82,49 @@ ALTER TABLE stan_magazynu
 ALTER TABLE stan_magazynu
     ADD FOREIGN KEY (id_produktu) REFERENCES produkty (id_produktu);
 
+ALTER TABLE wozek
+    ADD FOREIGN KEY (id_client) REFERENCES client (id_client);
+ALTER TABLE wozek
+    ADD FOREIGN KEY (id_produktu) REFERENCES produkty (id_produktu);
+
+-- Funckje
+CREATE OR REPLACE FUNCTION create_user(
+    Ifname VARCHAR(20),
+    Ilname VARCHAR(30),
+    Iage INT,
+    Iaddress VARCHAR(30),
+    Iemail VARCHAR(40),
+    Ilogin VARCHAR(20),
+    Ipassword VARCHAR(64)
+) RETURNS BOOLEAN AS
+$$
+    BEGIN
+        IF (SELECT COUNT(*) FROM client c WHERE c.login = Ilogin) > 0 THEN
+            RETURN FALSE;
+        ELSE
+            INSERT INTO client (fname, lname, age, address, email, login, password)
+                VALUES (Ifname, Ilname, Iage, Iaddress, Iemail, Ilogin, Ipassword);
+            RETURN TRUE;
+        END IF;
+    END
+$$ LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION get_loged_user(Ilogin VARCHAR(20),Ipassword VARCHAR(64))
+    RETURNS TABLE (
+        Sfname VARCHAR(20),
+        Slname VARCHAR(30),
+        Sage INT,
+        Saddress VARCHAR(30),
+        Semail VARCHAR(40)
+    ) AS
+$$
+    BEGIN
+        RETURN QUERY
+            SELECT fname, lname, age, address, email
+                FROM client c
+                WHERE c.login = Ilogin AND c.password = Ipassword;
+    END
+$$ LANGUAGE 'plpgsql';
 
 INSERT INTO produkt_opis VALUES (1, 'Kingston FURY', 'Pamięć RAM DDR4 Kingston FURY Beast Black 32 GB' ||
 'Zmodernizuj swój system dzięki stylowej i niezwykle wydajnej pamięci RAM DDR4 Kingston FURY Beast Black.' ||
@@ -94,6 +142,9 @@ INSERT INTO client (fname, lname, age, address, email, login, password) VALUES
 INSERT INTO client (fname, lname, age, address, email, login, password) VALUES
     ('Adam', 'Kubacki', 19, '30-100 Krakow', 'adamKub@gmail.com', 'adamczycha', '7144ef0ab2fd42660eeec67e468702775810a6474c3f397c533eed7405b6cdb3');
 
+-- password: password
+SELECT create_user('Admin', 'Administrator', 22, 'Kernel', 'admin@ork.xi', 'admin', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8');
+SELECT get_loged_user('admin', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8');
 
 SELECT * FROM client;
 DELETE FROM client WHERE id_client > 2;

@@ -1,11 +1,11 @@
-from typing import Callable
+from typing import Any
 from pathlib import Path
 
 import tkinter as tk
 from tkinter import ttk
 
 from application import Viewport
-from application import User, Loggingscreen, Registrationscreen
+from application import User, Logingscreen, Registrationscreen
 
 
 class ShopApplication:
@@ -35,26 +35,39 @@ class ShopApplication:
             relief="solid"
         )
 
-        self.content = Loggingscreen(self.appFrame, self.loggin, self.register)
+        self.content = Logingscreen(self.appFrame, self.login, self.register)
 
-    def loggin(self):
-        login = self.content.loginEntry.get()
-        password = self.content.passwordEntry.get()
+    def login(self) -> None:
+        if isinstance(self.content, Logingscreen):
+            login = self.content.loginEntry.get()
+            password = self.content.passwordEntry.get()
 
-        self.user = User.Login(login, password)
-        if self.user.isLogedIn:
-            self.appFrame.pack_forget()
-            self.showApp()
-        else:
-            self.content.validationLabel.configure(text="Nie prawidłowe dane logowania")
-
-    def register(self):
-        if isinstance(self.content, Loggingscreen):
-            self._changeViewport(Registrationscreen(self.appFrame, self.register))
+            self.user = User.Login(login, password)
+            if not self.user.isLogedIn:
+                self.content.validationLabel.configure(text="Nie prawidłowe dane logowania")
         elif isinstance(self.content, Registrationscreen):
-            print("Registring")
+            self._changeViewport(Logingscreen, self.login, self.register)
 
-    def showApp(self):
+    def register(self) -> None:
+        if isinstance(self.content, Logingscreen):
+            self._changeViewport(Registrationscreen, self.login, self.register)
+        elif isinstance(self.content, Registrationscreen):
+            if self.content.passwordEntry1.get() != self.content.passwordEntry2.get():
+                self.content.validationLabel.configure(text="Hasła się nie zgadzają")
+            userSpec = User.UserSpec(
+                self.content.fnameEntry.get(),
+                self.content.lnameEntry.get(),
+                self.content.ageEntry.get(),
+                self.content.addressEntry.get(),
+                self.content.emailEntry.get(),
+                self.content.loginEntry.get()
+            )
+    
+            self.user = User.Register(userSpec, self.content.passwordEntry1.get())
+            if self.user.isLogedIn is False:
+                self.content.validationLabel.configure(text="Użytkownik już istnieje")
+
+    def showApp(self) -> None:
         self.appFrame = tk.Frame(self.root, bg=self.BACKGROUND_COLOR)
         self.appFrame.pack(expand=True)
 
@@ -67,10 +80,10 @@ class ShopApplication:
     def run(self) -> None:
         self.root.mainloop()
 
-    def _changeViewport(self, viewport: Viewport) -> None:
+    def _changeViewport(self, viewport: Viewport, *args: Any, **kwargs: Any) -> None:
         self.appFrame.pack_forget()
         self.appFrame.pack(expand=True)
-        self.content = viewport
+        self.content = viewport(self.appFrame, *args, **kwargs)
 
 if __name__ == "__main__":
     app = ShopApplication()

@@ -25,7 +25,6 @@ class User:
             self.address = address    
             self.email = email
             self.login = login
-            self.password = None
 
     NOT_LOGGED = UserSpec(None, None, 0, None, None, None)
 
@@ -44,98 +43,89 @@ class User:
     def Login(cls, login: str, password: str) -> Self | None:
         password = cls._encryptPassword(password)
 
-        userSpecNames = (
-            "fname",
-            "lname",
-            "age",
-            "address",
-            "email",
-            "login",
-        )
-        user = Client().select(
-            "client",
-            *userSpecNames,
-            where = f"login = '{login}' and password = '{password}'"
-        )
-
+        user = Client().execute(f"SELECT * FROM get_loged_user('{login}', '{password}')")
         if not user:
             return cls(False, cls.NOT_LOGGED)
 
-        userSpec = cls.UserSpec(**{key: val for key, val in zip(userSpecNames, user[0], strict = True)})
+        user = user[0]
+        userSpec = cls.UserSpec(user[0], user[1], user[2], user[3], user[4], login)
         return cls(True, userSpec)
     
     
     @classmethod
     def Register(cls, userSpec: UserSpec, password: str) -> Self:
-        userSpec.password = cls._encryptPassword(password)
+        password = cls._encryptPassword(password)
 
-        success = Client().insert("client", userSpec.__dict__.keys(), [userSpec.__dict__.values()])
+        userValues = f"'{userSpec.fname}', '{userSpec.lname}', '{userSpec.age}', '{userSpec.address}', '{userSpec.email}', '{userSpec.login}', '{password}'"
+        success = Client().execute(f"SELECT create_user({userValues})")
+
         if success:
             return cls(True, userSpec)
-        cls(False, cls.NOT_LOGGED)
+
+        return cls(False, cls.NOT_LOGGED)
     
     @staticmethod
     def _encryptPassword(password: str):
         return sha256(password.encode("utf-8"), usedforsecurity=True).hexdigest()
         
 
-class Loggingscreen(Viewport):
+class Logingscreen(Viewport):
     def __init__(self, frameroot: ttk.Frame, onLogin: Callable, onRegistration: Callable) -> None:
-        self.loggingScreen = ttk.Frame(frameroot, style="Blue.TFrame")
-        self.loggingScreen.place(relx=0.5, rely=0.5)
-        self.loggingScreen.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.logingScreen = ttk.Frame(frameroot, style="Blue.TFrame")
+        self.logingScreen.place(relx=0.5, rely=0.5)
+        self.logingScreen.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        self.loginLabel = ttk.Label(self.loggingScreen, text="Login:")
+        self.loginLabel = ttk.Label(self.logingScreen, text="Login:")
         self.loginLabel.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
 
-        self.loginEntry = ttk.Entry(self.loggingScreen)
+        self.loginEntry = ttk.Entry(self.logingScreen)
         self.loginEntry.grid(row=0, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
 
-        self.passwordLabel = ttk.Label(self.loggingScreen, text="Hasło:")
+        self.passwordLabel = ttk.Label(self.logingScreen, text="Hasło:")
         self.passwordLabel.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
 
-        self.passwordEntry = ttk.Entry(self.loggingScreen, show="*")
+        self.passwordEntry = ttk.Entry(self.logingScreen, show="*")
         self.passwordEntry.grid(row=1, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
 
-        self.subbmitButton = ttk.Button(self.loggingScreen, text="Zaloguj", command=onLogin)
+        self.subbmitButton = ttk.Button(self.logingScreen, text="Zaloguj", command=onLogin)
         self.subbmitButton.grid(row=2, column=0, columnspan=2, pady=10)
 
-        self.registrationButton = ttk.Button(self.loggingScreen, text="Zarejestruj się", command=onRegistration)
+        self.registrationButton = ttk.Button(self.logingScreen, text="Zarejestruj się", command=onRegistration)
         self.registrationButton.grid(row=3, column=1, columnspan=1, padx=5, pady=5, sticky=tk.E)
 
-        self.validationLabel = ttk.Label(self.loggingScreen, text="")
+        self.validationLabel = ttk.Label(self.logingScreen, text="")
         self.validationLabel.grid(row=4, columnspan=2, padx=5, pady=5)
 
 
 class Registrationscreen(Viewport):
-    def __init__(self, frameroot: ttk.Frame, onRegistration: Callable) -> None:
+    def __init__(self, frameroot: ttk.Frame, onLogin: Callable, onRegistration: Callable) -> None:
         self.registrationScreen = ttk.Frame(frameroot, style="Blue.TFrame")
         self.registrationScreen.place(relx=0.5, rely=0.5)
         self.registrationScreen.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         self.emailLabel = ttk.Label(self.registrationScreen, text="Email:")
         self.emailLabel.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.emailLntry = ttk.Entry(self.registrationScreen)
-        self.emailLntry.grid(row=0, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
+        self.emailEntry = ttk.Entry(self.registrationScreen)
+        self.emailEntry.grid(row=0, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
 
         self.loginLabel = ttk.Label(self.registrationScreen, text="Login:")
         self.loginLabel.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
         self.loginEntry = ttk.Entry(self.registrationScreen)
         self.loginEntry.grid(row=1, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
 
-        self.passwordLabel = ttk.Label(self.registrationScreen, text="Hasło:")
-        self.passwordLabel.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
-        self.passwordEntry = ttk.Entry(self.registrationScreen, show="*")
-        self.passwordEntry.grid(row=2, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
+        self.passwordLabel1 = ttk.Label(self.registrationScreen, text="Hasło:")
+        self.passwordLabel1.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+        self.passwordEntry1 = ttk.Entry(self.registrationScreen, show="*")
+        self.passwordEntry1.grid(row=2, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
 
-        self.passwordLabel = ttk.Label(self.registrationScreen, text="Potwierdz Hasło:")
-        self.passwordLabel.grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
-        self.passwordEntry = ttk.Entry(self.registrationScreen, show="*")
-        self.passwordEntry.grid(row=3, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
+        self.passwordLabel2 = ttk.Label(self.registrationScreen, text="Potwierdz Hasło:")
+        self.passwordLabel2.grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+        self.passwordEntry2 = ttk.Entry(self.registrationScreen, show="*")
+        self.passwordEntry2.grid(row=3, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
 
         self.fnameLabel = ttk.Label(self.registrationScreen, text="Imię:")
         self.fnameLabel.grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
-        self.fnameEntry = ttk.Entry(self.registrationScreen, show="*")
+        self.fnameEntry = ttk.Entry(self.registrationScreen)
         self.fnameEntry.grid(row=4, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
 
         self.lnameLabel = ttk.Label(self.registrationScreen, text="Nazwisko:")
@@ -155,6 +145,12 @@ class Registrationscreen(Viewport):
 
         self.subbmitButton = ttk.Button(self.registrationScreen, text="Zarejestruj", command=onRegistration)
         self.subbmitButton.grid(row=8, column=0, columnspan=2, pady=10)
+
+        self.loginButton = ttk.Button(self.registrationScreen, text="Logowanie", command=onLogin)
+        self.loginButton.grid(row=9, column=0, columnspan=2, padx=5, pady=5, sticky=tk.E)
+        
+        self.validationLabel = ttk.Label(self.registrationScreen, text="")
+        self.validationLabel.grid(row=10, columnspan=2, padx=5, pady=5)
         
 
 if __name__ == '__main__':
@@ -171,7 +167,7 @@ if __name__ == '__main__':
     newUser = User.Register(userSpec, '12345')
     print("User Registerd")
 
-    user = User.Login("port", "12345")
+    user = User.Login("user", "password")
     print("User:")
     print(f"- fname: {user.fname}")
     print(f"- lname: {user.lname}")

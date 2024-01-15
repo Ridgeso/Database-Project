@@ -1,5 +1,9 @@
-from abc import ABCMeta
+from abc import ABC, abstractmethod
+
+from tkinter import ttk
 
 
-class Viewport(metaclass=ABCMeta):
-    pass
+class Viewport(ABC):
+    @abstractmethod
+    def __init__(self, frameroot: ttk.Frame) -> None:
+        pass

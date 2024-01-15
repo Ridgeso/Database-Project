@@ -65,7 +65,10 @@ class Client(metaclass=_ClientMeta):
             _ClientMeta._erroraTraceback.append(noFetchError)
             return False
         return True
-        
+    
+    def execute(self, querry: str) -> Any:
+        return self._executeQuerry(querry)
+
     def getTraceback(self) -> List:
         return _ClientMeta._erroraTraceback
 

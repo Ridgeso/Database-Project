@@ -26,7 +26,8 @@ class _ClientMeta(type):
                 try:
                     return sqlFuncion(self, *args, **kwargs)
                 except postgres.Error as error:
-                    _ClientMeta._erroraTraceback.append((annotation, f"{error.pgcode}: {error} | {error.pgerror}"))
+                    _ClientMeta._erroraTraceback.append(
+                        (annotation, f"{error.pgcode}: {error} | {error.pgerror}"))
                     self.rollback()
             return funcWithTraceback
         return accumulateTraceback
@@ -84,8 +85,17 @@ class Client(metaclass=_ClientMeta):
             return ';'
         
         querry = ""
+        if (joins := settings.get("join", None)) is not None:
+            for join in joins:
+                querry += f" JOIN {join[0]} ON {join[1]}"
         if (where := settings.get("where", None)) is not None:
             querry += f" WHERE {where} "
+        if (groupBy := settings.get("groupBy", None)) is not None:
+            querry += f" GROUP BY {groupBy} "
+        if (having := settings.get("having", None)) is not None:
+            querry += f" HAVING {having} "
+        if (orderBy := settings.get("orderBy", None)) is not None:
+            querry += f" ORDER BY {orderBy} "
 
         return querry + ';'
 

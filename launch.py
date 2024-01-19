@@ -1,41 +1,36 @@
 from typing import Any
 from pathlib import Path
+from sys import argv
+from getpass import getpass
 
 import tkinter as tk
 from tkinter import ttk
 
 from application import Viewport
-from application import User, Logingscreen, Registrationscreen
-
+from application import ShopStyle
+from application import User, Logingscreen, Registrationscreen, Shopscreen
+from sqlMenager import Client
 
 class ShopApplication:
-    SCREEN_WIDTH = 1080
-    SCREEN_HEIGHT = 720
-    BACKGROUND_COLOR = "#090960"
-    FOREGROUND_COLOR = "#63768D"
-    BUTTONS_COLOR = "#8AC6D0"
-    FONT_COLOR = "#FFFFFF"
 
     def __init__(self) -> None:
+        if "--god-mode" in argv or "-g" in argv:
+            return
+        
         self.user = User.NOT_LOGGED
 
         self.root = tk.Tk()
         self.root.title("Sklep Elektroniczny")
-        self.root.geometry(f"{self.SCREEN_WIDTH}x{self.SCREEN_HEIGHT}")
-        self.root.configure(bg=self.BACKGROUND_COLOR)
+        self.root.geometry(f"{ShopStyle.SCREEN_WIDTH}x{ShopStyle.SCREEN_HEIGHT}")
+        self.root.configure(bg=ShopStyle.BACKGROUND_COLOR)
 
-        self.appFrame = tk.Frame(self.root, bg=self.BACKGROUND_COLOR)
-        self.appFrame.pack(expand=True)
+        self.appFrame = tk.Frame(self.root, bg=ShopStyle.BACKGROUND_COLOR)
+        self.appFrame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        self.style = ttk.Style()
-        self.style.configure(
-            "Blue.TFrame",
-            background=self.BACKGROUND_COLOR,
-            borderwidth=2,
-            relief="solid"
-        )
+        self.style = ShopStyle()
 
         self.content = Logingscreen(self.appFrame, self.login, self.register)
+        # self.content = Shopscreen(self.appFrame, self.getUser)
 
     def login(self) -> None:
         if isinstance(self.content, Logingscreen):
@@ -43,7 +38,9 @@ class ShopApplication:
             password = self.content.passwordEntry.get()
 
             self.user = User.Login(login, password)
-            if not self.user.isLogedIn:
+            if self.user.isLogedIn:
+                self._changeViewport(Shopscreen, self.getUser)
+            else:
                 self.content.validationLabel.configure(text="Nie prawidłowe dane logowania")
         elif isinstance(self.content, Registrationscreen):
             self._changeViewport(Logingscreen, self.login, self.register)
@@ -55,6 +52,7 @@ class ShopApplication:
             if self.content.passwordEntry1.get() != self.content.passwordEntry2.get():
                 self.content.validationLabel.configure(text="Hasła się nie zgadzają")
             userSpec = User.UserSpec(
+                -1,
                 self.content.fnameEntry.get(),
                 self.content.lnameEntry.get(),
                 self.content.ageEntry.get(),
@@ -64,26 +62,75 @@ class ShopApplication:
             )
     
             self.user = User.Register(userSpec, self.content.passwordEntry1.get())
-            if self.user.isLogedIn is False:
+            if self.user.isLogedIn:
+                self._changeViewport(Shopscreen, self.getUser)
+            else:
                 self.content.validationLabel.configure(text="Użytkownik już istnieje")
 
-    def showApp(self) -> None:
-        self.appFrame = tk.Frame(self.root, bg=self.BACKGROUND_COLOR)
-        self.appFrame.pack(expand=True)
-
-        self.appContent = ttk.Frame(self.appFrame)
-        self.appContent.pack()
-
-        self.welcomeLabel = ttk.Label(self.appContent, text=f"Witaj, {self.user.login}!")
-        self.welcomeLabel.grid(row=0, column=0, pady=10)
+    def getUser(self) -> User:
+        return self.user
 
     def run(self) -> None:
-        self.root.mainloop()
+        if "--god-mode" in argv or "-g" in argv:
+            self.consoleApp()
+        else:
+            self.root.mainloop()
+
+    def consoleApp(self) -> None:
+        ac = None
+        while True:
+            print("Action:")
+            print("     1: Login")
+            print("     2: Register")
+            if (ac := input()) in ("1", "2"):
+                break
+        while True:
+            if ac == "1":
+                login = input("Login: ")
+                password = getpass("Password: ")
+                self.user = User.Login(login, password)
+            else:
+                fname = input("fname: ")
+                lname = input("lname: ")
+                age = input("age: ")
+                address = input("address: ")
+                email = input("email: ")
+                login = input("login: ")
+                password = getpass("Password: ")
+                userSpec = User.UserSpec(
+                    -1,
+                    fname,
+                    lname,
+                    age,
+                    address,
+                    email,
+                    login
+                )
+                self.user = User.Register(userSpec, password)
+
+            if not self.user.isLogedIn:
+                print("Bledne dane")
+                continue
+            else:
+                break
+        while (querry := input("Querry: ")) != "exit":
+            data = Client().execute(querry)
+            for err in Client().getTraceback():
+                print(err)
+            Client().getTraceback().clear()
+
+            if data:
+                for d in data:
+                    print(d)
 
     def _changeViewport(self, viewport: Viewport, *args: Any, **kwargs: Any) -> None:
-        self.appFrame.pack_forget()
-        self.appFrame.pack(expand=True)
+        self.appFrame.destroy()
+        
+        self.appFrame = tk.Frame(self.root, bg=ShopStyle.BACKGROUND_COLOR)
+        self.appFrame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        
         self.content = viewport(self.appFrame, *args, **kwargs)
+
 
 if __name__ == "__main__":
     app = ShopApplication()

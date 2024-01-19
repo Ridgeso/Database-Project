@@ -1,5 +1,6 @@
 from typing import Self, Callable
 from hashlib import sha256
+from collections import namedtuple
 
 import tkinter as tk
 from tkinter import ttk
@@ -9,35 +10,18 @@ from sqlMenager import Client
 
 
 class User:
-    class UserSpec:
-        def __init__(
-            self,
-            fname: str,
-            lname: str,
-            age: str,
-            address: str,
-            email: str,
-            login: str,
-        ) -> None:
-            self.fname = fname
-            self.lname = lname
-            self.age = age
-            self.address = address    
-            self.email = email
-            self.login = login
-
-    NOT_LOGGED = UserSpec(None, None, 0, None, None, None)
+    UserSpec = namedtuple("UserSpec", ("userId", "fname", "lname", "age", "address", "email", "login"))
+    NOT_LOGGED = UserSpec(-1, None, None, 0, None, None, None)
 
     def __init__(self, isLogedIn: bool, userSpec: UserSpec) -> None:
         self.isLogedIn = isLogedIn
+        self.userId = int(userSpec.userId)
         self.fname = userSpec.fname
         self.lname = userSpec.lname
         self.age = int(userSpec.age)
         self.address = userSpec.address
         self.email = userSpec.email
         self.login = userSpec.login
-
-        self.cart = []
     
     @classmethod
     def Login(cls, login: str, password: str) -> Self | None:
@@ -48,7 +32,7 @@ class User:
             return cls(False, cls.NOT_LOGGED)
 
         user = user[0]
-        userSpec = cls.UserSpec(user[0], user[1], user[2], user[3], user[4], login)
+        userSpec = cls.UserSpec(user[0], user[1], user[2], user[3], user[4], user[5], login)
         return cls(True, userSpec)
     
     
@@ -58,10 +42,18 @@ class User:
 
         userValues = f"'{userSpec.fname}', '{userSpec.lname}', '{userSpec.age}', '{userSpec.address}', '{userSpec.email}', '{userSpec.login}', '{password}'"
         success = Client().execute(f"SELECT create_user({userValues})")
-
-        if success:
+    
+        if success[0][0] != -1:
+            userSpec = cls.UserSpec(
+                success[0][0],
+                userSpec.fname,
+                userSpec.lname,
+                userSpec.age,
+                userSpec.address,
+                userSpec.email,
+                userSpec.lname
+            )
             return cls(True, userSpec)
-
         return cls(False, cls.NOT_LOGGED)
     
     @staticmethod
@@ -72,7 +64,7 @@ class User:
 class Logingscreen(Viewport):
     def __init__(self, frameroot: ttk.Frame, onLogin: Callable, onRegistration: Callable) -> None:
         self.logingScreen = ttk.Frame(frameroot, style="Blue.TFrame")
-        self.logingScreen.place(relx=0.5, rely=0.5)
+        self.logingScreen.place(relx=15.5, rely=15.5)
         self.logingScreen.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         self.loginLabel = ttk.Label(self.logingScreen, text="Login:")
@@ -157,6 +149,7 @@ if __name__ == '__main__':
     client = Client()
 
     userSpec = User.UserSpec(
+        -1,
         'Insert',
         'Spec',
         -2,
@@ -169,6 +162,7 @@ if __name__ == '__main__':
 
     user = User.Login("user", "password")
     print("User:")
+    print(f"- id: {user.userId}")
     print(f"- fname: {user.fname}")
     print(f"- lname: {user.lname}")
     print(f"- age: {user.age}")

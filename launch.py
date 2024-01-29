@@ -122,7 +122,7 @@ class ShopApplication:
                 for d in data:
                     print(d)
 
-    def _changeViewport(self, viewport: Viewport, *args: Any, **kwargs: Any) -> None:
+    def _changeViewport(self, viewport: Viewport, *args, **kwargs) -> None:
         self.appFrame.destroy()
         
         self.appFrame = tk.Frame(self.root, bg=ShopStyle.BACKGROUND_COLOR)

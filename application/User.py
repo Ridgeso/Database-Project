@@ -1,4 +1,3 @@
-from typing import Self, Callable
 from hashlib import sha256
 from collections import namedtuple
 
@@ -13,7 +12,7 @@ class User:
     UserSpec = namedtuple("UserSpec", ("userId", "fname", "lname", "age", "address", "email", "login"))
     NOT_LOGGED = UserSpec(-1, None, None, 0, None, None, None)
 
-    def __init__(self, isLogedIn: bool, userSpec: UserSpec) -> None:
+    def __init__(self, isLogedIn, userSpec):
         self.isLogedIn = isLogedIn
         self.userId = int(userSpec.userId)
         self.fname = userSpec.fname
@@ -24,7 +23,7 @@ class User:
         self.login = userSpec.login
     
     @classmethod
-    def Login(cls, login: str, password: str) -> Self | None:
+    def Login(cls, login, password):
         password = cls._encryptPassword(password)
 
         user = Client().execute(f"SELECT * FROM get_loged_user('{login}', '{password}')")
@@ -37,7 +36,7 @@ class User:
     
     
     @classmethod
-    def Register(cls, userSpec: UserSpec, password: str) -> Self:
+    def Register(cls, userSpec, password):
         password = cls._encryptPassword(password)
 
         userValues = f"'{userSpec.fname}', '{userSpec.lname}', '{userSpec.age}', '{userSpec.address}', '{userSpec.email}', '{userSpec.login}', '{password}'"
@@ -57,12 +56,12 @@ class User:
         return cls(False, cls.NOT_LOGGED)
     
     @staticmethod
-    def _encryptPassword(password: str):
+    def _encryptPassword(password):
         return sha256(password.encode("utf-8"), usedforsecurity=True).hexdigest()
         
 
 class Logingscreen(Viewport):
-    def __init__(self, frameroot: ttk.Frame, onLogin: Callable, onRegistration: Callable) -> None:
+    def __init__(self, frameroot, onLogin, onRegistration):
         self.logingScreen = ttk.Frame(frameroot, style="Blue.TFrame")
         self.logingScreen.place(relx=15.5, rely=15.5)
         self.logingScreen.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -90,7 +89,7 @@ class Logingscreen(Viewport):
 
 
 class Registrationscreen(Viewport):
-    def __init__(self, frameroot: ttk.Frame, onLogin: Callable, onRegistration: Callable) -> None:
+    def __init__(self, frameroot, onLogin, onRegistration):
         self.registrationScreen = ttk.Frame(frameroot, style="Blue.TFrame")
         self.registrationScreen.place(relx=0.5, rely=0.5)
         self.registrationScreen.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))

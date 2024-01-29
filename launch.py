@@ -1,4 +1,3 @@
-from typing import Any
 from pathlib import Path
 from sys import argv
 from getpass import getpass
@@ -13,7 +12,7 @@ from sqlMenager import Client
 
 class ShopApplication:
 
-    def __init__(self) -> None:
+    def __init__(self):
         if "--god-mode" in argv or "-g" in argv:
             return
         
@@ -32,7 +31,7 @@ class ShopApplication:
         self.content = Logingscreen(self.appFrame, self.login, self.register)
         # self.content = Shopscreen(self.appFrame, self.getUser)
 
-    def login(self) -> None:
+    def login(self):
         if isinstance(self.content, Logingscreen):
             login = self.content.loginEntry.get()
             password = self.content.passwordEntry.get()
@@ -45,7 +44,7 @@ class ShopApplication:
         elif isinstance(self.content, Registrationscreen):
             self._changeViewport(Logingscreen, self.login, self.register)
 
-    def register(self) -> None:
+    def register(self):
         if isinstance(self.content, Logingscreen):
             self._changeViewport(Registrationscreen, self.login, self.register)
         elif isinstance(self.content, Registrationscreen):
@@ -67,16 +66,16 @@ class ShopApplication:
             else:
                 self.content.validationLabel.configure(text="Użytkownik już istnieje")
 
-    def getUser(self) -> User:
+    def getUser(self):
         return self.user
 
-    def run(self) -> None:
+    def run(self):
         if "--god-mode" in argv or "-g" in argv:
             self.consoleApp()
         else:
             self.root.mainloop()
 
-    def consoleApp(self) -> None:
+    def consoleApp(self):
         ac = None
         while True:
             print("Action:")

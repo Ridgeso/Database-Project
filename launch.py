@@ -7,7 +7,13 @@ from tkinter import ttk
 
 from application import Viewport
 from application import ShopStyle
-from application import User, Logingscreen, Registrationscreen, Shopscreen
+from application import (
+    User,
+    Logingscreen,
+    Registrationscreen,
+    Shopscreen,
+    Adminscreen
+)
 from sqlMenager import Client
 
 class ShopApplication:
@@ -28,7 +34,8 @@ class ShopApplication:
 
         self.style = ShopStyle()
 
-        self.content = Logingscreen(self.appFrame, self.login, self.register)
+        # self.content = Logingscreen(self.appFrame, self.login, self.register)
+        self.content = Adminscreen(self.appFrame)
         # self.content = Shopscreen(self.appFrame, self.getUser)
 
     def login(self):
@@ -38,7 +45,10 @@ class ShopApplication:
 
             self.user = User.Login(login, password)
             if self.user.isLogedIn:
-                self._changeViewport(Shopscreen, self.getUser)
+                if self.user.isAdmin:
+                    self._changeViewport(Adminscreen)
+                else:
+                    self._changeViewport(Shopscreen, self.getUser)
             else:
                 self.content.validationLabel.configure(text="Nie prawidłowe dane logowania")
         elif isinstance(self.content, Registrationscreen):

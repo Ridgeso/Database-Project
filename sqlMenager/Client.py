@@ -1,4 +1,3 @@
-from typing import Any, List, Tuple, Callable, Self
 from functools import wraps
 
 import psycopg2 as postgres
@@ -13,16 +12,16 @@ except ImportError as error:
 class _ClientMeta(type):
     _instances = {}
     _erroraTraceback = []
-    def __call__(cls, *args: Any, **kwds: Any) -> Any:
+    def __call__(cls, *args, **kwds):
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwds)
         return cls._instances[cls]
 
     @staticmethod
-    def accumulateErrors(annotation: str = "") -> Callable[[Any], Any]:
-        def accumulateTraceback(sqlFuncion: Callable[[Any], Any]) -> Callable[[Any], Any]:
+    def accumulateErrors(annotation = ""):
+        def accumulateTraceback(sqlFuncion):
             @wraps(sqlFuncion)
-            def funcWithTraceback(self: Self, *args: Any, **kwargs: Any) -> Any:
+            def funcWithTraceback(self, *args, **kwargs):
                 try:
                     return sqlFuncion(self, *args, **kwargs)
                 except postgres.Error as error:
@@ -34,26 +33,26 @@ class _ClientMeta(type):
 
 
 class Client(metaclass=_ClientMeta):
-    def __init__(self) -> None:
+    def __init__(self):
         self.connection = None
         self.cursor = None
 
         self._connect()
         self._setSearchPath()
     
-    def __del__(self) -> None:
+    def __del__(self):
         self._disconect()
     
-    def isConected(self) -> bool:
+    def isConected(self):
         return self.connection is not None
 
-    def select(self, table: str, *rows: str, **settings: dict[str, str]) -> List:
+    def select(self, table, *rows, **settings):
         querry = f"SELECT {'*' if not rows else ', '.join(rows)} FROM {table}";
         querry += self._prepareConditions(settings)
         
         return self._executeQuerry(querry + ';')
     
-    def insert(self, table: str, names: Tuple[str], values: List[Tuple]) -> bool:
+    def insert(self, table, names, values):
         formatRow = lambda row: '(' + ','.join(f"'{value}'" for value in row) + ')'
         rows = ", ".join(formatRow(row) for row in values)
         querry = f"INSERT INTO {table} ({', '.join(names)}) VALUES {rows};"
@@ -67,10 +66,10 @@ class Client(metaclass=_ClientMeta):
             return False
         return True
     
-    def execute(self, querry: str) -> Any:
+    def execute(self, querry):
         return self._executeQuerry(querry)
 
-    def getTraceback(self) -> List:
+    def getTraceback(self):
         return _ClientMeta._erroraTraceback
 
     def rollback(self):
@@ -80,7 +79,7 @@ class Client(metaclass=_ClientMeta):
     def _setSearchPath(self):
         self.cursor.execute("SET SEARCH_PATH TO projekt;")
 
-    def _prepareConditions(self, settings: dict[str, str]) -> str:
+    def _prepareConditions(self, settings):
         if settings is None:
             return ';'
         
@@ -100,17 +99,17 @@ class Client(metaclass=_ClientMeta):
         return querry + ';'
 
     @_ClientMeta.accumulateErrors("Connection")
-    def _connect(self) -> None:
+    def _connect(self):
         self.connection = postgres.connect(**config.dbConfig)
         self.cursor = self.connection.cursor()
 
-    def _disconect(self) -> None:
+    def _disconect(self):
         if self.connection:
             self.cursor.close()
             self.connection.close()
 
     @_ClientMeta.accumulateErrors("Querry")
-    def _executeQuerry(self, querryFormat: str) -> List | None:
+    def _executeQuerry(self, querryFormat):
         self.cursor.execute(querryFormat)
         self.connection.commit()
         return self.cursor.fetchall()

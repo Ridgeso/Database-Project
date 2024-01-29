@@ -11,7 +11,7 @@ from sqlMenager import Client
 class Shopscreen(Viewport):
     _Item = namedtuple("Item", ("id_produktu", "nazwa", "cena", "id_opisu", "id_podkat", "specyfikacja"))
 
-    def __init__(self, frameroot: ttk.Frame, onGetUser: Callable) -> None:
+    def __init__(self, frameroot, onGetUser) -> None:
         self.cart = Counter()
         self.onGetUser = onGetUser
         self.itemsWidgets = []
@@ -71,7 +71,7 @@ class Shopscreen(Viewport):
         self.cartItems.pack(padx=10, pady=10)
         self._showCart()
     
-    def _createItem(self, row: int, item: _Item) -> Tuple[ttk.Widget, ...]:
+    def _createItem(self, row, item):
         itemFrame = ttk.Frame(self.shopScreen)
         itemLabel = ttk.Label(itemFrame, text=item.nazwa)
         itemsNum = ttk.Entry(itemFrame, width=5)
@@ -90,14 +90,14 @@ class Shopscreen(Viewport):
 
         return (itemFrame, itemLabel, itemsNum, cartBehavior, showMoreButton)
 
-    def _addToCart(self, itemId: int, cartButton: ttk.Button, itemsNum: ttk.Entry) -> None:
+    def _addToCart(self, itemId, cartButton, itemsNum):
         if not itemsNum.get().isdigit():
             return
         self.cart[itemId] = self.cart.setdefault(itemId, 0) + int(itemsNum.get())
         cartButton.configure(text="Usun z wózka", command=lambda: self._delFromCart(itemId, cartButton, itemsNum))
         self._showCart()
 
-    def _delFromCart(self, itemId: int, cartButton: ttk.Button, itemsNum: ttk.Entry) -> Callable:
+    def _delFromCart(self, itemId, cartButton, itemsNum):
         try:
             self.cart[itemId] = 0
             cartButton.configure(text="Dodaj do wózka", command=lambda: self._addToCart(itemId, cartButton, itemsNum))
@@ -116,13 +116,13 @@ class Shopscreen(Viewport):
                     break
         self.cartItems.configure(text=cartPopup)
 
-    def _getUserCart(self) -> List:
+    def _getUserCart(self):
         return Client().select("wozek", "id_produktu", "ilosc", where=f"id_client = {self.onGetUser().userId}")
     
-    def _onFrameConfigure(self, event: tk.Event) -> None:
+    def _onFrameConfigure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-    def _changeShowMoreFrame(self, otherItem: _Item) -> None:
+    def _changeShowMoreFrame(self, otherItem):
         disc = Client().select("produkt_opis", "producent", "opis", where=f"id_opisu = {otherItem.id_opisu}")
         kat = Client().select("podkategoria pk", "pk.nazwa", "k.nazwa",
             join=[

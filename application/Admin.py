@@ -18,20 +18,17 @@ class Adminscreen(Viewport):
         self.kategorieFrame = ttk.Frame(self.adminScreen, style="Blue.TFrame")
         self.podkatFrame = ttk.Frame(self.adminScreen, style="Blue.TFrame")
         self.magazynFrame = ttk.Frame(self.adminScreen, style="Blue.TFrame")
-        self.opinieFrame = ttk.Frame(self.adminScreen, style="Blue.TFrame")
 
         self._initMainFrame()
         self._initProduktFrame()
         self._initKategorieFrame()
         self._initPodkatFrame()
         self._initMagazynFrame()
-        self._initOpinieFrame()
         
         self.produktFrame.grid_forget()
         self.kategorieFrame.grid_forget()
         self.podkatFrame.grid_forget()
         self.magazynFrame.grid_forget()
-        self.opinieFrame.grid_forget()
 
     def _initMainFrame(self):
         self.mainFrame.grid(row=0, column=0)
@@ -60,53 +57,192 @@ class Adminscreen(Viewport):
     def _initProduktFrame(self):
         self.produktContent = self._getFrame(self.produktFrame)
 
-        self.produktContent.append(ttk.Label(self.produktContent[0], text="Produkty"))
+        self.produktContent["mainLabel"] = ttk.Label(self.produktContent["frame"], text="Produkty")
+        self.produktContent["entryFrame"] = ttk.Frame(self.produktContent["frame"], style="Blue.TFrame")
 
-        self.produktContent[2].grid(row=1, column=0, pady=10)
+        self.produktContent["appendLabel"] = ttk.Label(self.produktContent["entryFrame"], text="Dodaj Produkt")
+        self.produktContent["mainEntry"] = (
+            ttk.Label(self.produktContent["entryFrame"], text="Nazwa:"),
+            ttk.Entry(self.produktContent["entryFrame"]),
+        )
+        self.produktContent["prizeEntry"] = (
+            ttk.Label(self.produktContent["entryFrame"], text="Cena:"),
+            ttk.Entry(self.produktContent["entryFrame"])
+        )
+        self.produktContent["opisEntry"] = (
+            ttk.Label(self.produktContent["entryFrame"], text="Producent:"),
+            ttk.Entry(self.produktContent["entryFrame"]),
+            ttk.Label(self.produktContent["entryFrame"], text="Opis:"),
+            tk.Text(self.produktContent["entryFrame"], height=3)
+        )
+
+        kategorie = tuple(map(lambda kat: kat[0], Client().select("kategorie", "nazwa")))
+        self.produktContent["katEntry"] = (
+            ttk.Label(self.produktContent["entryFrame"], text="Kategorie:"),
+            ttk.Combobox(self.produktContent["entryFrame"], values=kategorie),
+            ttk.Label(self.produktContent["entryFrame"], text="Podkategorie:"),
+            ttk.Combobox(self.produktContent["entryFrame"], values=())
+        )
+        self.produktContent["specEntry"] = (
+            ttk.Label(self.produktContent["entryFrame"], text="Specyfikacja:"),
+            ttk.Entry(self.produktContent["entryFrame"])
+        )
+
+        self.produktContent["submit"] = ttk.Button(self.produktContent["entryFrame"], text="Zapisz", command=self._safeProd)
+
+        self.produktContent["mainLabel"].grid(row=1, column=0, pady=10)
+        self.produktContent["entryFrame"].grid(row=2, column=0, pady=10)
+
+        self.produktContent["appendLabel"].grid(row=0, columnspan=2, padx=20, pady=10)
+        
+        self.produktContent["mainEntry"][0].grid(row=1, column=0, padx=10, pady=10)
+        self.produktContent["mainEntry"][1].grid(row=1, column=1, padx=10, pady=10)
+        
+        self.produktContent["prizeEntry"][0].grid(row=2, column=0, padx=10, pady=10)
+        self.produktContent["prizeEntry"][1].grid(row=2, column=1, padx=10, pady=10)
+        
+        self.produktContent["opisEntry"][0].grid(row=3, column=0, padx=10, pady=10)
+        self.produktContent["opisEntry"][1].grid(row=3, column=1, padx=10, pady=10)
+        self.produktContent["opisEntry"][2].grid(row=4, column=0, padx=10, pady=10)
+        self.produktContent["opisEntry"][3].grid(row=4, column=1, padx=10, pady=10)
+        
+        self.produktContent["katEntry"][0].grid(row=5, column=0, padx=10, pady=10)
+        self.produktContent["katEntry"][1].grid(row=5, column=1, padx=10, pady=10)
+        self.produktContent["katEntry"][1].bind('<<ComboboxSelected>>', self._onChangeKat)
+        self.produktContent["katEntry"][2].grid(row=6, column=0, padx=10, pady=10)
+        self.produktContent["katEntry"][3].grid(row=6, column=1, padx=10, pady=10)
+
+        self.produktContent["specEntry"][0].grid(row=7, column=0, padx=10, pady=10)
+        self.produktContent["specEntry"][1].grid(row=7, column=1, padx=10, pady=10)
+
+        self.produktContent["submit"].grid(row=8, columnspan=2, padx=10, pady=10)
 
     def _initKategorieFrame(self):
         self.katContent = self._getFrame(self.kategorieFrame)
         
-        self.katContent.append(ttk.Label(self.katContent[0], text="Kategorie"))
+        self.katContent["mainLabel"] = ttk.Label(self.katContent["frame"], text="Kategorie")
+        self.katContent["entryFrame"] = ttk.Frame(self.katContent["frame"], style="Blue.TFrame")
+        
+        self.katContent["katEntry"] = (
+            ttk.Label(self.katContent["entryFrame"], text="Kategoria"),
+            ttk.Entry(self.katContent["entryFrame"])
+        )
+        self.katContent["submit"] = ttk.Button(self.katContent["entryFrame"], text="Zapisz", command=self._safeKat)
 
-        self.katContent[2].grid(row=1, column=0, pady=10)
+        self.katContent["mainLabel"].grid(row=1, column=0, pady=10)
+        self.katContent["entryFrame"].grid(row=2, column=0, pady=10)
 
+        self.katContent["katEntry"][0].grid(row=0, column=0, padx=10, pady=10)
+        self.katContent["katEntry"][1].grid(row=0, column=1, padx=10, pady=10)
+
+        self.katContent["submit"].grid(row=1, columnspan=2, padx=10, pady=10)
 
     def _initPodkatFrame(self):
         self.podkatContent = self._getFrame(self.podkatFrame)
         
-        self.podkatContent.append(ttk.Label(self.podkatContent[0], text="Podkategorie"))
+        self.podkatContent["mainLabel"] = ttk.Label(self.podkatContent["frame"], text="Podkategorie")
+        self.podkatContent["entryFrame"] = ttk.Frame(self.podkatContent["frame"], style="Blue.TFrame")
 
-        self.podkatContent[2].grid(row=1, column=0, pady=10)
+        kategorie = tuple(map(lambda kat: kat[0], Client().select("kategorie", "nazwa")))
+        self.podkatContent["katEntry"] = (
+            ttk.Label(self.podkatContent["entryFrame"], text="Kategorie:"),
+            ttk.Combobox(self.podkatContent["entryFrame"], values=kategorie)
+        )
+        self.podkatContent["podkatEntry"] = (
+            ttk.Label(self.podkatContent["entryFrame"], text="Kategoria"),
+            ttk.Entry(self.podkatContent["entryFrame"])
+        )
+        self.podkatContent["submit"] = ttk.Button(self.podkatContent["entryFrame"], text="Zapisz", command=self._safePodkat)
 
+        self.podkatContent["mainLabel"].grid(row=1, column=0, pady=10)
+        self.podkatContent["entryFrame"].grid(row=2, column=0, pady=10)
+
+        self.podkatContent["katEntry"][0].grid(row=0, column=0, padx=10, pady=10)
+        self.podkatContent["katEntry"][1].grid(row=0, column=1, padx=10, pady=10)
+
+        self.podkatContent["podkatEntry"][0].grid(row=1, column=0, padx=10, pady=10)
+        self.podkatContent["podkatEntry"][1].grid(row=1, column=1, padx=10, pady=10)
+
+        self.podkatContent["submit"].grid(row=2, columnspan=2, padx=10, pady=10)
 
     def _initMagazynFrame(self):
         self.magazynContent = self._getFrame(self.magazynFrame)
 
-        self.magazynContent.append(ttk.Label(self.magazynContent[0], text="Magazyn"))
+        self.magazynContent["mainLabel"] = ttk.Label(self.magazynContent["frame"], text="Magazyn")
+        self.magazynContent["entryFrame"] = ttk.Frame(self.magazynContent["frame"], style="Blue.TFrame")
 
-        self.magazynContent[2].grid(row=1, column=0, pady=10)
+        magazyny = tuple(map(lambda kat: kat[0], Client().select("magazyn", "nazwa")))
+        self.magazynContent["magCombo"] = (
+            ttk.Label(self.magazynContent["entryFrame"], text="Magazyn:"),
+            ttk.Combobox(self.magazynContent["entryFrame"], values=magazyny)
+        )
+        self.magazynContent["stan"] = []
 
+        self.magazynContent["mainLabel"].grid(row=1, column=0, pady=10)
+        self.magazynContent["entryFrame"].grid(row=2, column=0, pady=10)
 
-    def _initOpinieFrame(self):        
-        self.opinieContent = self._getFrame(self.opinieFrame)
+        self.magazynContent["magCombo"][0].grid(row=0, column=0, padx=10, pady=10)
+        self.magazynContent["magCombo"][1].grid(row=0, column=1, padx=10, pady=10)
+        self.magazynContent["magCombo"][1].bind('<<ComboboxSelected>>', self._onChangeMag)
 
-        self.opinieContent.append(ttk.Label(self.opinieContent[0], text="Opinie"))
-
-        self.opinieContent[2].grid(row=1, column=0, pady=10)
-    
     def _getFrame(self, rootFrame):
         rootFrame.grid(row=0, column=0)
-        content = []
+        content = {}
 
-        content.append(ttk.Frame(rootFrame, style="Blue.TFrame"))
-        content[0].grid(row=0, column=0)
+        content["frame"] = ttk.Frame(rootFrame, style="Blue.TFrame")
+        content["frame"].grid(row=0, column=0)
 
-        content.append(ttk.Button(content[0], text="Ekran Główny", command=lambda: self._returnToMainScreen(rootFrame)))
-        content[1].grid(row=0, column=0)
+        content["backButton"] = ttk.Button(content["frame"], text="Ekran Główny", command=lambda: self._returnToMainScreen(rootFrame))
+        content["backButton"].grid(row=0, column=0)
 
         return content
     
     def _returnToMainScreen(self, currentFrame):
         currentFrame.grid_forget()
         self.mainFrame.grid()
+
+    def _onChangeKat(self, event):
+        currentKat = self.produktContent["katEntry"][1].get()
+        podkat = list(map(
+            lambda pk: pk[0],
+            Client().select(
+                "podkategoria p",
+                "p.nazwa",
+                join=[("kategorie k", "p.id_kategorii = k.id_kategorii")],
+                where=f"k.nazwa LIKE '{currentKat}'"
+            )
+        ))
+        self.produktContent["katEntry"][3].config(values=podkat)
+
+    def _onChangeMag(self, event):
+        currentMag = self.magazynContent["magCombo"][1].get()
+        stanMag = Client().select(
+            "stan_magazynu sm",
+            "p.nazwa",
+            "sm.ilosc",
+            join=[
+                ("magazyn m", "sm.id_magazynu = m.id_magazynu"),
+                ("produkty p", "sm.id_produktu = p.id_produktu")
+            ],
+            where=f"m.nazwa LIKE '{currentMag}'"
+        )
+        for label in self.magazynContent["stan"]:
+            label.grid_forget()
+            label.destroy()
+        self.magazynContent["stan"].clear()
+        for i, prod in enumerate(stanMag):
+            lab = ttk.Label(self.magazynContent["entryFrame"], text=f"Produkt: {prod[0]} -- ilość: {prod[1]}")
+            lab.grid(row=i + 1, columnspan=2, pady=5)
+            self.magazynContent["stan"].append(lab)
+
+    def _safeProd(self):
+        pass
+
+    def _safeKat(self):
+        pass
+
+    def _safePodkat(self):
+        pass
+
+    def _safeMag(self):
+        pass

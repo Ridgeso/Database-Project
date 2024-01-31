@@ -3,27 +3,27 @@ SET SEARCH_PATH TO projekt;
 -- Tabele
 CREATE TABLE kategorie
 (
-    id_kategorii INT PRIMARY KEY,
+    id_kategorii SERIAL PRIMARY KEY,
     nazwa        VARCHAR(32) NOT NULL
 );
 
 CREATE TABLE podkategoria
 (
-    id_podkat    INT PRIMARY KEY,
+    id_podkat    SERIAL PRIMARY KEY,
     id_kategorii INT,
     nazwa        VARCHAR(32) NOT NULL
 );
 
 CREATE TABLE produkt_opis
 (
-    id_opisu  INT PRIMARY KEY,
+    id_opisu  SERIAL PRIMARY KEY,
     producent VARCHAR(30) NOT NULL,
     opis      text        NOT NULL
 );
 
 CREATE TABLE produkty
 (
-    id_produktu  INT PRIMARY KEY,
+    id_produktu  SERIAL PRIMARY KEY,
     nazwa        VARCHAR(48)    NOT NULL,
     cena         decimal(10, 2) NOT NULL,
     id_opisu     INT,
@@ -33,7 +33,7 @@ CREATE TABLE produkty
 
 CREATE TABLE magazyn
 (
-    id_magazynu INT PRIMARY KEY,
+    id_magazynu SERIAL PRIMARY KEY,
     nazwa       VARCHAR(20) NOT NULL,
     adres       VARCHAR(32)
 );
@@ -47,7 +47,7 @@ CREATE TABLE stan_magazynu
 
 CREATE TABLE opinie
 (
-    id_opini    INT PRIMARY KEY,
+    id_opini    SERIAL PRIMARY KEY,
     ocena       INT NOT NULL,
     id_client   INT NOT NULL,
     id_prod     INT NOT NULL,
@@ -112,6 +112,9 @@ $$
     DECLARE
         that_user INT := -1;
     BEGIN
+        IF Ilogin LIKE 'admin' THEN
+            RETURN -1;
+        END IF;
         that_user := (SELECT id_client FROM client WHERE login = Ilogin);
         IF that_user IS NOT NULL THEN
             RETURN -1;
@@ -155,6 +158,32 @@ $$
 
         DELETE FROM wozek w WHERE w.id_client = id_clienta;
 
+        RETURN TRUE;
+    END;
+$$
+    LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION dodaj_produkt(
+    iNazwa VARCHAR(48),
+    iCena DECIMAL(10, 2),
+    iProducent VARCHAR(30),
+    iPodkat VARCHAR(32),
+    iOpis TEXT,
+    iSpecyfi TEXT
+)
+    RETURNS BOOLEAN AS
+$$
+    BEGIN
+        WITH opis_row as (
+            INSERT INTO produkt_opis (producent, opis) VALUES (iProducent, iOpis) RETURNING id_opisu
+        )
+        INSERT INTO produkty (nazwa, cena, id_opisu, id_podkat, specyfikacja) VALUES(
+            iNazwa,
+            iCena,
+            (SELECT opr.id_opisu FROM opis_row opr),
+            (SELECT pk.id_podkat FROM podkategoria pk WHERE pk.nazwa LIKE iPodkat),
+            iSpecyfi
+        );
         RETURN TRUE;
     END;
 $$
@@ -284,12 +313,5 @@ INSERT INTO stan_magazynu VALUES
     (2, 1, 5), (2, 2, 2), (2, 3, 3), (2, 4, 4), (2, 5, 5), (2, 6, 2), (2, 7, 3), (2, 8, 4), (2, 9, 5), (2, 10, 2), (2, 11, 3), (2, 12, 4), (2, 13, 5), (2, 14, 2), (2, 15, 3), (2, 16, 4), (2, 17, 5), (2, 18, 2), (2, 19, 3),
     (3, 1, 2), (3, 2, 3), (3, 3, 4), (3, 4, 5), (3, 5, 2), (3, 6, 3), (3, 7, 4), (3, 8, 5), (3, 9, 2), (3, 10, 3), (3, 11, 4), (3, 12, 5), (3, 13, 2), (3, 14, 3), (3, 15, 4), (3, 16, 5), (3, 17, 2), (3, 18, 3), (3, 19, 4);
 
-SELECT id_produktu, ilosc FROM wozek WHERE id_client = 1;
 
-UPDATE stan_magazynu sm SET
-    ilosc = ilosc - (SELECT w.ilosc FROM wozek w WHERE w.id_produktu = sm.id_produktu and w.id_client = 1)
-WHERE id_produktu IN (SELECT w.id_produktu FROM wozek w WHERE w.id_client = id_client);
-
-SELECT * FROM wozek;
 SELECT * FROM client;
-DELETE FROM client WHERE id_client > 3;

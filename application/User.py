@@ -12,8 +12,9 @@ class User:
     UserSpec = namedtuple("UserSpec", ("userId", "fname", "lname", "age", "address", "email", "login"))
     NOT_LOGGED = UserSpec(-1, None, None, 0, None, None, None)
 
-    def __init__(self, isLogedIn, userSpec):
+    def __init__(self, isLogedIn, isAdmin, userSpec):
         self.isLogedIn = isLogedIn
+        self.isAdmin = isAdmin
         self.userId = int(userSpec.userId)
         self.fname = userSpec.fname
         self.lname = userSpec.lname
@@ -28,11 +29,11 @@ class User:
 
         user = Client().execute(f"SELECT * FROM get_loged_user('{login}', '{password}')")
         if not user:
-            return cls(False, cls.NOT_LOGGED)
+            return cls(False, False, cls.NOT_LOGGED)
 
         user = user[0]
         userSpec = cls.UserSpec(user[0], user[1], user[2], user[3], user[4], user[5], login)
-        return cls(True, userSpec)
+        return cls(True, login == 'admin', userSpec)
     
     
     @classmethod
@@ -52,8 +53,8 @@ class User:
                 userSpec.email,
                 userSpec.lname
             )
-            return cls(True, userSpec)
-        return cls(False, cls.NOT_LOGGED)
+            return cls(True, False, userSpec)
+        return cls(False, False, cls.NOT_LOGGED)
     
     @staticmethod
     def _encryptPassword(password):

@@ -34,9 +34,7 @@ class ShopApplication:
 
         self.style = ShopStyle()
 
-        # self.content = Logingscreen(self.appFrame, self.login, self.register)
-        self.content = Adminscreen(self.appFrame)
-        # self.content = Shopscreen(self.appFrame, self.getUser)
+        self.content = Logingscreen(self.appFrame, self.login, self.register)
 
     def login(self):
         if isinstance(self.content, Logingscreen):

@@ -32,27 +32,22 @@ class Adminscreen(Viewport):
 
     def _initMainFrame(self):
         self.mainFrame.grid(row=0, column=0)
-        self.mainFrameContent = []
+        self.mainFrameContent = {}
 
-        self.mainFrameContent.append(ttk.Frame(self.mainFrame, style="Blue.TFrame"))
-        self.mainFrameContent[0].grid(row=0, column=0)
+        self.mainFrameContent['mainFrame'] = ttk.Frame(self.mainFrame, style="Blue.TFrame")
+        self.mainFrameContent['mainFrame'].grid(row=0, column=0)
         
-        self.mainFrameContent.append(
-            ttk.Button(self.mainFrameContent[0], text="Produkty", command=lambda: (self.mainFrame.grid_forget(), self.produktFrame.grid())))
-        self.mainFrameContent.append(
-            ttk.Button(self.mainFrameContent[0], text="Kategorie", command=lambda: (self.mainFrame.grid_forget(), self.kategorieFrame.grid())))
-        self.mainFrameContent.append(
-            ttk.Button(self.mainFrameContent[0], text="Podkategorie", command=lambda: (self.mainFrame.grid_forget(), self.podkatFrame.grid())))
-        self.mainFrameContent.append(
-            ttk.Button(self.mainFrameContent[0], text="Magazyn", command=lambda: (self.mainFrame.grid_forget(), self.magazynFrame.grid())))
-        self.mainFrameContent.append(
-            ttk.Button(self.mainFrameContent[0], text="Opinie", command=lambda: (self.mainFrame.grid_forget(), self.opinieFrame.grid())))
+        self.mainFrameContent['BIG_ADMIN_LABEL'] = ttk.Label(self.mainFrameContent['mainFrame'], text="WITAJ WIELKI ADMINIE")
+        self.mainFrameContent['produkty'] = ttk.Button(self.mainFrameContent['mainFrame'], text="Produkty", command=lambda: (self.mainFrame.grid_forget(), self.produktFrame.grid()))
+        self.mainFrameContent['kategorie'] = ttk.Button(self.mainFrameContent['mainFrame'], text="Kategorie", command=lambda: (self.mainFrame.grid_forget(), self.kategorieFrame.grid()))
+        self.mainFrameContent['podkategorie'] = ttk.Button(self.mainFrameContent['mainFrame'], text="Podkategorie", command=lambda: (self.mainFrame.grid_forget(), self.podkatFrame.grid()))
+        self.mainFrameContent['magazyn'] = ttk.Button(self.mainFrameContent['mainFrame'], text="Magazyn", command=lambda: (self.mainFrame.grid_forget(), self.magazynFrame.grid()))
 
-        self.mainFrameContent[1].grid(row=0, column=0, pady=10)
-        self.mainFrameContent[2].grid(row=1, column=0, pady=10)
-        self.mainFrameContent[3].grid(row=2, column=0, pady=10)
-        self.mainFrameContent[4].grid(row=3, column=0, pady=10)
-        self.mainFrameContent[5].grid(row=4, column=0, pady=10)
+        self.mainFrameContent['BIG_ADMIN_LABEL'].grid(row=0, column=0, padx=10, pady=10)
+        self.mainFrameContent['produkty'].grid(row=1, column=0, pady=10)
+        self.mainFrameContent['kategorie'].grid(row=2, column=0, pady=10)
+        self.mainFrameContent['podkategorie'].grid(row=3, column=0, pady=10)
+        self.mainFrameContent['magazyn'].grid(row=4, column=0, pady=10)
 
     def _initProduktFrame(self):
         self.produktContent = self._getFrame(self.produktFrame)
@@ -236,13 +231,18 @@ class Adminscreen(Viewport):
             self.magazynContent["stan"].append(lab)
 
     def _safeProd(self):
-        pass
+        dane = f"'{self.produktContent['mainEntry'][1].get()}', {self.produktContent['prizeEntry'][1].get()}, '{self.produktContent['opisEntry'][1].get()}', '{self.produktContent['katEntry'][3].get()}', '{self.produktContent['opisEntry'][3].get('1.0', 'end-1c')}', '{self.produktContent['specEntry'][1].get()}'"
+        Client().execute(f"SELECT dodaj_produkt({dane})")
+        self._returnToMainScreen(self.produktFrame)
 
     def _safeKat(self):
-        pass
+        Client().insert("kategorie", ("nazwa",), [(self.katContent['katEntry'][1].get(),)])
+        self._returnToMainScreen(self.kategorieFrame)
 
     def _safePodkat(self):
-        pass
+        katId = Client().select("kategorie", "id_kategorii", where=f"nazwa LIKE '{self.podkatContent['katEntry'][1].get()}'")[0][0]
+        Client().insert("podkategoria", ("id_kategorii", "nazwa"), [(katId, self.podkatContent['podkatEntry'][1].get())])
+        self._returnToMainScreen(self.podkatFrame)
 
     def _safeMag(self):
-        pass
+        self._returnToMainScreen(self.magazynFrame)
